@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão Operacional — SEFAZ SP</title>
+<style>
+  :root {
+    --navy: #1B2A4A;
+    --navy-light: #243557;
+    --accent: #D94F2B;
+    --bg: #F0F2F5;
+    --card: #FFFFFF;
+    --text: #111827;
+    --text-mid: #374151;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --frente-univ: #2D6BE4;
+    --frente-mov: #0891B2;
+    --frente-duo: #7C3AED;
+    --frente-reg: #D97706;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--accent);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-logo {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #94A3B8;
+  }
+  .header-divider { width: 1px; height: 20px; background: #334155; }
+  .header-title { font-size: 15px; font-weight: 600; color: #F8FAFC; }
+  .header-right { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94A3B8; }
+  .week-badge {
+    background: var(--accent); color: #fff;
+    padding: 3px 10px; border-radius: 4px;
+    font-weight: 700; font-size: 11px; letter-spacing: 0.5px;
+  }
+
+  /* TABS */
+  nav {
+    background: var(--navy-light);
+    padding: 0 32px;
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid #1e3a5f;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 12px; font-weight: 600;
+    color: #94A3B8; cursor: pointer;
+    border-bottom: 3px solid transparent;
+    letter-spacing: 0.3px;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap; text-transform: uppercase;
+  }
+  .tab:hover { color: #E2E8F0; }
+  .tab.active { color: #fff; border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main { padding: 28px 32px; max-width: 1300px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; margin-bottom: 20px;
+  }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .section-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* CARD */
+  .card {
+    background: var(--card); border-radius: 8px;
+    border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px;
+  }
+
+  /* WEEK GROUP HEADER */
+  .week-group-header td {
+    background: #F1F5F9;
+    padding: 8px 14px 8px 18px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--navy);
+    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .week-group-header:first-child td { border-top: none; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #F8FAFC;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  thead th:first-child { padding: 10px 0; width: 4px; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover:not(.week-group-header) { background: #FAFBFC; }
+  td { padding: 11px 14px; vertical-align: top; font-size: 13px; color: var(--text-mid); }
+  td.bar-cell { padding: 0; width: 4px; min-width: 4px; }
+
+  /* FRENTE BAR */
+  .bar { width: 4px; height: 100%; min-height: 40px; display: block; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block; padding: 2px 9px;
+    border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-todo  { background: #F3F4F6; color: #374151; }
+  .badge-doing { background: #DBEAFE; color: #1D4ED8; }
+  .badge-done  { background: #D1FAE5; color: #065F46; }
+  .badge-blocked { background: #FEE2E2; color: #991B1B; }
+  .badge-open  { background: #FEF3C7; color: #92400E; }
+  .badge-confirm { background: #EDE9FE; color: #5B21B6; }
+
+  /* FRENTE CHIP */
+  .chip {
+    display: inline-block; padding: 2px 9px;
+    border-radius: 4px; font-size: 11px; font-weight: 600;
+    color: #fff; white-space: nowrap;
+  }
+  .chip-univ { background: var(--frente-univ); }
+  .chip-mov  { background: var(--frente-mov); }
+  .chip-duo  { background: var(--frente-duo); }
+  .chip-reg  { background: var(--frente-reg); }
+
+  /* PERGUNTAS */
+  .perguntas-grid {
+    display: grid; grid-template-columns: repeat(2,1fr);
+    gap: 12px; margin-bottom: 24px;
+  }
+  .pq-card {
+    background: var(--card); border-radius: 8px;
+    border: 1px solid var(--border); padding: 14px 16px;
+    border-left: 4px solid;
+  }
+  .pq-card.pq-univ { border-left-color: var(--frente-univ); }
+  .pq-card.pq-mov  { border-left-color: var(--frente-mov); }
+  .pq-card.pq-duo  { border-left-color: var(--frente-duo); }
+  .pq-card.pq-reg  { border-left-color: var(--frente-reg); }
+  .pq-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .pq-item {
+    font-size: 12px; color: var(--text-mid);
+    padding: 4px 0; display: flex; align-items: flex-start; gap: 7px;
+    border-bottom: 1px solid #F3F4F6;
+  }
+  .pq-item:last-child { border-bottom: none; }
+  .pq-bullet {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-muted); flex-shrink: 0; margin-top: 5px;
+  }
+
+  /* PARTICIPANTES */
+  .participantes { display: flex; flex-wrap: wrap; gap: 4px; }
+  .part-tag {
+    background: #F3F4F6; color: var(--text-mid);
+    border-radius: 4px; padding: 2px 7px;
+    font-size: 11px; font-weight: 500;
+  }
+
+  /* ACHADO */
+  .achado { font-size: 12px; color: var(--text-mid); line-height: 1.65; }
+  .achado strong { color: var(--text); font-weight: 600; }
+
+  .resp { font-size: 12px; color: var(--text-muted); }
+  .num-cell { font-size: 12px; font-weight: 700; color: var(--text-muted); width: 36px; }
+
+  /* ADD TASK BUTTON */
+  .add-task-btn {
+    background: var(--navy); color: #fff;
+    border: none; border-radius: 6px;
+    padding: 8px 16px; font-size: 12px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    letter-spacing: 0.3px; transition: background .15s; white-space: nowrap;
+  }
+  .add-task-btn:hover { background: var(--accent); }
+
+  /* DELETE BUTTON */
+  .del-btn {
+    background: none; border: none;
+    color: transparent; font-size: 17px;
+    cursor: pointer; padding: 0 2px; line-height: 1;
+    transition: color .15s;
+  }
+  tbody tr:hover .del-btn { color: var(--text-muted); }
+  .del-btn:hover { color: #EF4444 !important; }
+  .action-cell { width: 32px; padding: 8px 4px; text-align: center; }
+
+  /* EDITABLE CELLS */
+  .edit-text:hover { background: #F0F9FF; border-radius: 4px; cursor: text; }
+  .inline-edit {
+    width: 100%; border: 1.5px solid var(--frente-univ);
+    border-radius: 4px; padding: 4px 7px;
+    font-size: 13px; font-family: inherit;
+    resize: vertical; outline: none; background: #fff;
+  }
+
+  /* STATUS BADGE CLICKABLE */
+  .status-badge { cursor: pointer; transition: opacity .15s; user-select: none; }
+  .status-badge:hover { opacity: 0.72; }
+
+  /* FRENTE CELL EDITABLE */
+  .frente-cell { cursor: text; }
+  .frente-cell:hover { background: #F0F9FF; border-radius: 4px; }
+  .chip-custom { background: #6B7280; }
+
+  /* DESCRIÇÃO DO BACKLOG */
+  .desc-card {
+    background: var(--card); border-radius: 8px;
+    border: 1px solid var(--border); padding: 22px 26px;
+    margin-bottom: 16px;
+  }
+  .desc-card-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 12px;
+  }
+  .desc-week-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--navy);
+  }
+  .desc-del-btn {
+    background: none; border: none; color: transparent;
+    font-size: 17px; cursor: pointer; padding: 0 4px;
+    line-height: 1; transition: color .15s;
+  }
+  .desc-card:hover .desc-del-btn { color: var(--text-muted); }
+  .desc-del-btn:hover { color: #EF4444 !important; }
+  .desc-textarea {
+    width: 100%; min-height: 130px; resize: vertical;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; font-size: 13px; font-family: inherit;
+    color: var(--text-mid); line-height: 1.75;
+    outline: none; background: #FAFAFA;
+    transition: border-color .15s, background .15s;
+  }
+  .desc-textarea:focus { border-color: var(--navy); background: #fff; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(15,23,42,0.5); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 12px;
+    padding: 28px 32px; width: 500px; max-width: 96vw;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+    animation: modal-in .18s ease;
+  }
+  @keyframes modal-in { from { transform: translateY(12px); opacity:0; } to { transform:none; opacity:1; } }
+  .modal-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--navy); margin-bottom: 22px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-muted); margin-bottom: 5px;
+  }
+  .form-control {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; font-family: inherit;
+    background: #FAFAFA; color: var(--text);
+    outline: none; transition: border-color .15s, background .15s;
+  }
+  .form-control:focus { border-color: var(--navy); background: #fff; }
+  textarea.form-control { resize: vertical; min-height: 70px; }
+  .modal-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 22px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-cancel {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-mid); border-radius: 6px;
+    padding: 8px 18px; font-size: 13px; cursor: pointer;
+    transition: background .12s;
+  }
+  .btn-cancel:hover { background: var(--bg); }
+  .btn-save {
+    background: var(--navy); color: #fff; border: none;
+    border-radius: 6px; padding: 8px 22px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background .12s;
+  }
+  .btn-save:hover { background: var(--accent); }
+
+  @media (max-width: 768px) {
+    header { padding: 0 16px; }
+    nav { padding: 0 16px; overflow-x: auto; }
+    main { padding: 16px; }
+    .perguntas-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="header-logo">EloGroup</span>
+    <div class="header-divider"></div>
+    <span class="header-title">Gestão Operacional — SEFAZ SP</span>
+  </div>
+  <div class="header-right">
+    <span class="week-badge">Semana 1</span>
+    <span id="current-date"></span>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" data-target="backlog">Backlog</div>
+  <div class="tab" data-target="realizadas">Atividades Realizadas</div>
+  <div class="tab" data-target="descricao">Descrição do Backlog</div>
+</nav>
+
+<main>
+
+  <!-- ══════════════════════════════════════
+       BACKLOG
+  ══════════════════════════════════════ -->
+  <section id="backlog" class="section active">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Backlog</div>
+        <div class="section-sub">Atividades planejadas por semana</div>
+      </div>
+      <button class="add-task-btn" id="add-task-btn">＋ Adicionar tarefa</button>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--frente-univ)"></div>Universidades</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--frente-mov)"></div>Movimentações</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--frente-duo)"></div>Duodécimos</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--frente-reg)"></div>Regime Caixa x Comp.</div>
+      </div>
+    </div>
+
+    <!-- Perguntas Direcionadoras -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:10px;">Perguntas Direcionadoras</div>
+    <div class="perguntas-grid">
+      <div class="pq-card pq-univ">
+        <div class="pq-label">Universidades</div>
+        <div class="pq-item"><div class="pq-bullet"></div>Como as universidades realizam os lançamentos contábeis no SIAFEM?</div>
+        <div class="pq-item"><div class="pq-bullet"></div>Como é gerada a nota de sistema para o espelho contábil?</div>
+        <div class="pq-item"><div class="pq-bullet"></div>Qual o arquivo de espelhamento utilizado no processo?</div>
+      </div>
+      <div class="pq-card pq-mov">
+        <div class="pq-label">Movimentações entre Contas</div>
+        <div class="pq-item"><div class="pq-bullet"></div>O fluxo de movimentação entre contas está correto e validado?</div>
+        <div class="pq-item"><div class="pq-bullet"></div>Qual instrumento contábil (roteiro/demonstrativo) pode ser usado para check de sanidade?</div>
+      </div>
+      <div class="pq-card pq-duo">
+        <div class="pq-label">Duodécimos</div>
+        <div class="pq-item"><div class="pq-bullet"></div>Quais os impactos da unificação dos repasses na programação financeira?</div>
+      </div>
+      <div class="pq-card pq-reg">
+        <div class="pq-label">Regime Caixa x Competência</div>
+        <div class="pq-item"><div class="pq-bullet"></div>Como férias e 13° são contabilizados hoje?</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Frente</th>
+            <th>Atividade</th>
+            <th>Responsável</th>
+            <th>Status</th>
+            <th style="width:32px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="week-group-header"><td colspan="5">Semana 1</td></tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Criar fluxo de artefatos do SIAFEM — fluxo geral e fluxo de exceção das universidades</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Reunião com equipe financeira para tratar sobre universidades</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Entendimento do roteiro financeiro</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Elaboração de material para condução da reunião com equipe financeira</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Estudo dos materiais de repasse saúde e repasse educação das universidades</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Criação de slides com explicação sobre o funcionamento dos artefatos do SIAFEM</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Evolução da planilha de artefatos</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Validação dos fluxos por tipo de processo com o Tamioso</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Ajustes no material dos fluxos por tipo de processo</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Envio de material preliminar para a Grazi</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Realização de reunião com o Financeiro</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Realização de reunião com o Tamioso</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-mov)"></span></td>
+            <td><span class="chip chip-mov">Movimentações</span></td>
+            <td>Pegar evidência de um instrumento contábil que comprove as movimentações bancárias</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-reg)"></span></td>
+            <td><span class="chip chip-reg">Regime Caixa x Comp.</span></td>
+            <td>Elaborar perguntas sobre o material de caixa x competência com a Rossana</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-reg)"></span></td>
+            <td><span class="chip chip-reg">Regime Caixa x Comp.</span></td>
+            <td>Criação de diagrama do processo de realizar o pagamento da folha normal das centralizadas</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+
+          <tr class="week-group-header"><td colspan="5">Semana 2</td></tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Marcação de agenda com universidades</td>
+            <td class="resp">Aline</td>
+            <td><span class="badge badge-doing">Em andamento</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Continuar marcação de reuniões de coleta de artefatos do sistema com o Tamioso</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Validar os fluxos de artefatos levantados</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Estruturar material com fluxo com os novos artefatos levantados</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-mov)"></span></td>
+            <td><span class="chip chip-mov">Movimentações</span></td>
+            <td>Marcar reunião com DLIB, DCUT e DAC para tratar de movimentações entre contas</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-done">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-mov)"></span></td>
+            <td><span class="chip chip-mov">Movimentações</span></td>
+            <td>Ajustar o material de movimentações entre contas</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-mov)"></span></td>
+            <td><span class="chip chip-mov">Movimentações</span></td>
+            <td>Enviar o caso de uso de movimentações entre contas para o Maciel</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-duo)"></span></td>
+            <td><span class="chip chip-duo">Duodécimos</span></td>
+            <td>Validar proposta de duodécimo com o José Raimundo</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-reg)"></span></td>
+            <td><span class="chip chip-reg">Regime Caixa x Comp.</span></td>
+            <td>Envio de perguntas sobre o material de regime de caixa x competência</td>
+            <td class="resp">Mariana</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-reg)"></span></td>
+            <td><span class="chip chip-reg">Regime Caixa x Comp.</span></td>
+            <td>Criar slides para a situação do layout da PM</td>
+            <td class="resp">Tales</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-reg)"></span></td>
+            <td><span class="chip chip-reg">Regime Caixa x Comp.</span></td>
+            <td>Realizar reunião de Definição Contábil da Folha de Pagamento de SP</td>
+            <td class="resp">Todos</td>
+            <td><span class="badge badge-todo">A fazer</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       REALIZADAS
+  ══════════════════════════════════════ -->
+  <section id="realizadas" class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Atividades Realizadas</div>
+        <div class="section-sub">Avanços e achados por semana</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Frente</th>
+            <th>Atividade</th>
+            <th>Resultado / Achado Principal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="week-group-header"><td colspan="4">Semana 1</td></tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-univ)"></span></td>
+            <td><span class="chip chip-univ">Universidades</span></td>
+            <td>Reunião com equipe financeira</td>
+            <td class="achado">Fluxo financeiro compreendido. Roteiro de <strong>baixa complexidade</strong> — basicamente movimentações financeiras. Empenho, liquidação e pagamento são tratados pelas próprias universidades. Eventos financeiros identificados (base para de-para com roteiro contábil).</td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-mov)"></span></td>
+            <td><span class="chip chip-mov">Movimentações</span></td>
+            <td>Revisão do fluxo com Gilberto</td>
+            <td class="achado">Ajustes realizados conforme contribuições do Gilberto. <strong>Divergências pontuadas permanecem</strong> em parte do fluxo — requerem reunião de alinhamento com DCUT e DELIB.</td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-duo)"></span></td>
+            <td><span class="chip chip-duo">Duodécimos</span></td>
+            <td>Análise normativa da proposta do Raimundo</td>
+            <td class="achado"><strong>Sem impedimentos jurídicos ou normativos.</strong> Proposta prevê unificação dos repasses mensais. Ponto de atenção: impactos na programação financeira e operacionalização ainda a validar.</td>
+          </tr>
+          <tr>
+            <td class="bar-cell"><span class="bar" style="background:var(--frente-reg)"></span></td>
+            <td><span class="chip chip-reg">Regime Caixa x Comp.</span></td>
+            <td>Análise do roteiro de eventos da folha de pagamento</td>
+            <td class="achado">Material indica <strong>regime de competência</strong> no desenho (folha de dezembro liquidada em dez, paga em jan). Restam dúvidas: provisão mensal de 13° e férias não evidenciada; na prática, pagamentos ocorrem antes da liquidação. Reunião com Rossana necessária.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+
+
+
+  <!-- ══════════════════════════════════════
+       DESCRIÇÃO DO BACKLOG
+  ══════════════════════════════════════ -->
+  <section id="descricao" class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Descrição do Backlog</div>
+        <div class="section-sub">Narrativa semanal dos acontecimentos</div>
+      </div>
+      <button class="add-task-btn" id="add-week-btn">＋ Nova semana</button>
+    </div>
+    <div id="desc-container"></div>
+  </section>
+
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-title">＋ Nova Tarefa</div>
+    <form id="modal-form" autocomplete="off">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="m-semana">Semana</label>
+          <input class="form-control" id="m-semana" list="semana-opts" placeholder="Semana 1" required>
+          <datalist id="semana-opts">
+            <option value="Semana 1"><option value="Semana 2">
+            <option value="Semana 3"><option value="Semana 4">
+            <option value="Semana 5"><option value="Semana 6">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-frente">Frente</label>
+          <input class="form-control" id="m-frente" list="frente-opts" placeholder="Ex: Universidades">
+          <datalist id="frente-opts">
+            <option value="Universidades">
+            <option value="Movimentações">
+            <option value="Duodécimos">
+            <option value="Regime Caixa x Comp.">
+          </datalist>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="m-atividade">Atividade</label>
+        <textarea class="form-control" id="m-atividade" placeholder="Descreva a atividade..." required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="m-resp">Responsável</label>
+          <input class="form-control" id="m-resp" list="resp-opts" placeholder="Nome">
+          <datalist id="resp-opts">
+            <option value="Tales"><option value="Aline">
+            <option value="Mariana"><option value="Rossana">
+            <option value="Todos">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-status">Status</label>
+          <select class="form-control" id="m-status">
+            <option value="todo">A fazer</option>
+            <option value="doing">Em andamento</option>
+            <option value="done">Concluído</option>
+            <option value="blocked">Bloqueado</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="modal-cancel">Cancelar</button>
+        <button type="submit" class="btn-save">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ── TABS ──────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.target).classList.add('active');
+    });
+  });
+
+  // Date
+  const now = new Date();
+  document.getElementById('current-date').textContent =
+    now.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // ── CONFIG ────────────────────────────────────────────────────────────────
+  const FRENTE = {
+    univ: { label: 'Universidades',        color: 'var(--frente-univ)', chip: 'chip-univ' },
+    mov:  { label: 'Movimentações',         color: 'var(--frente-mov)',  chip: 'chip-mov'  },
+    duo:  { label: 'Duodécimos',            color: 'var(--frente-duo)',  chip: 'chip-duo'  },
+    reg:  { label: 'Regime Caixa x Comp.', color: 'var(--frente-reg)',  chip: 'chip-reg'  }
+  };
+  const STATUS_CYCLE = ['todo', 'doing', 'done', 'blocked'];
+  const STATUS = {
+    todo:    { label: 'A fazer',      badge: 'badge-todo'    },
+    doing:   { label: 'Em andamento', badge: 'badge-doing'   },
+    done:    { label: 'Concluído',    badge: 'badge-done'    },
+    blocked: { label: 'Bloqueado',    badge: 'badge-blocked' }
+  };
+  const STORE_KEY = 'gestao_backlog_v1';
+
+  // ── STORAGE ───────────────────────────────────────────────────────────────
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+  function loadTasks() {
+    try { const d = localStorage.getItem(STORE_KEY); return d ? JSON.parse(d) : null; }
+    catch { return null; }
+  }
+
+  function saveTasks(tasks) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(tasks)); } catch {}
+  }
+
+  // ── DOM PARSE (first run only) ─────────────────────────────────────────────
+  function parseDOM() {
+    const tasks = [];
+    const tbody = document.querySelector('#backlog table tbody');
+    if (!tbody) return tasks;
+    let sem = 'Semana 1';
+    tbody.querySelectorAll('tr').forEach(row => {
+      if (row.classList.contains('week-group-header')) {
+        sem = row.querySelector('td').textContent.trim(); return;
+      }
+      const chip  = row.querySelector('.chip');
+      const badge = row.querySelector('.badge');
+      const tds   = [...row.querySelectorAll('td')];
+      if (!chip || !badge || tds.length < 5) return;
+
+      let frente = 'univ';
+      if (chip.classList.contains('chip-mov')) frente = 'mov';
+      else if (chip.classList.contains('chip-duo')) frente = 'duo';
+      else if (chip.classList.contains('chip-reg')) frente = 'reg';
+
+      let status = 'todo';
+      if (badge.classList.contains('badge-doing'))   status = 'doing';
+      else if (badge.classList.contains('badge-done'))    status = 'done';
+      else if (badge.classList.contains('badge-blocked')) status = 'blocked';
+
+      tasks.push({ id: uid(), semana: sem, frente,
+        atividade:   tds[2].textContent.trim(),
+        responsavel: tds[3].textContent.trim(),
+        status });
+    });
+    return tasks;
+  }
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  function semOrd(s) { const m = s.match(/\d+/); return m ? +m[0] : 999; }
+
+  function render() {
+    const tasks = loadTasks() || [];
+    const tbody = document.querySelector('#backlog table tbody');
+    tbody.innerHTML = '';
+
+    const semanas = [...new Set(tasks.map(t => t.semana))]
+      .sort((a, b) => semOrd(a) - semOrd(b));
+
+    semanas.forEach(sem => {
+      const hr = document.createElement('tr');
+      hr.className = 'week-group-header';
+      hr.innerHTML = `<td colspan="6">${sem}</td>`;
+      tbody.appendChild(hr);
+      tasks.filter(t => t.semana === sem).forEach(t => tbody.appendChild(buildRow(t)));
+    });
+  }
+
+  function buildRow(task) {
+    // Se for uma categoria customizada, gera um objeto temporário para não quebrar o layout
+    const f = FRENTE[task.frente] || { label: task.frente, color: '#6B7280', chip: 'chip-custom' };
+    const s = STATUS[task.status]  || STATUS.todo;
+    const tr = document.createElement('tr');
+    tr.dataset.id = task.id;
+    tr.innerHTML = `
+      <td class="bar-cell"><span class="bar" style="background:${f.color}"></span></td>
+      <td class="edit-text" data-field="frente" title="Duplo clique para editar"><span class="chip ${f.chip}">${f.label}</span></td>
+      <td class="edit-text" data-field="atividade" title="Duplo clique para editar">${task.atividade}</td>
+      <td class="resp edit-text" data-field="responsavel" title="Duplo clique para editar">${task.responsavel}</td>
+      <td><span class="badge ${s.badge} status-badge" title="Clique para mudar status">${s.label}</span></td>
+      <td class="action-cell"><button class="del-btn" title="Remover">×</button></td>`;
+
+    // Status cycle
+    tr.querySelector('.status-badge').addEventListener('click', () => {
+      const tasks = loadTasks() || [];
+      const t = tasks.find(x => x.id === task.id);
+      if (!t) return;
+      t.status = STATUS_CYCLE[(STATUS_CYCLE.indexOf(t.status) + 1) % STATUS_CYCLE.length];
+      saveTasks(tasks); render();
+    });
+
+    // Inline edit (double click)
+  tr.querySelectorAll('.edit-text').forEach(cell => {
+        cell.addEventListener('dblclick', () => {
+          const field = cell.dataset.field;
+          const orig  = cell.textContent;
+          const isArea = field === 'atividade';
+          const el = document.createElement(isArea ? 'textarea' : 'input');
+          el.className = 'inline-edit';
+          el.value = orig;
+          if (isArea) el.rows = 2;
+          cell.innerHTML = '';
+          cell.appendChild(el);
+          el.focus();
+          function commit() {
+            let val = el.value.trim() || orig;
+            const tasks = loadTasks() || [];
+            const t = tasks.find(x => x.id === task.id);
+            if (t) { 
+              if (field === 'frente') {
+                const textLower = val.toLowerCase();
+                if (textLower.includes("mov")) val = "mov";
+                else if (textLower.includes("duo")) val = "duo";
+                else if (textLower.includes("reg")) val = "reg";
+                else if (textLower.includes("univ")) val = "univ";
+              }
+              t[field] = val; 
+              saveTasks(tasks); 
+            }
+            render();
+          }
+          el.addEventListener('blur', commit);
+          el.addEventListener('keydown', e => {
+            if (!isArea && e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') render();
+          });
+        });
+      });
+
+    // Delete
+    tr.querySelector('.del-btn').addEventListener('click', () => {
+      if (!confirm('Remover esta tarefa?')) return;
+      const tasks = loadTasks() || [];
+      const i = tasks.findIndex(x => x.id === task.id);
+      if (i > -1) tasks.splice(i, 1);
+      saveTasks(tasks); render();
+    });
+
+    return tr;
+  }
+
+  // ── MODAL ─────────────────────────────────────────────────────────────────
+  const modal  = document.getElementById('task-modal');
+  const mForm  = document.getElementById('modal-form');
+
+  document.getElementById('add-task-btn').addEventListener('click', () => {
+    mForm.reset();
+    document.getElementById("m-semana").value = "Semana 1";
+    modal.classList.add("open");
+    document.getElementById("m-atividade").focus();
+    setTimeout(() => document.getElementById('m-atividade').focus(), 80);
+  });
+
+  document.getElementById('modal-cancel').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('open'); });
+
+  mForm.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const frenteTexto = document.getElementById('m-frente').value.trim().toLowerCase();
+
+    let frente = "univ";
+
+    if (frenteTexto.includes("mov")) {
+        frente = "mov";
+    } else if (frenteTexto.includes("duo")) {
+        frente = "duo";
+    } else if (frenteTexto.includes("reg")) {
+        frente = "reg";
+    } else if (frenteTexto.includes("univ")) {
+        frente = "univ";
+    }
+
+    const tasks = loadTasks() || [];
+
+    tasks.push({
+      id: uid(),
+      semana: document.getElementById('m-semana').value.trim() || "Semana 1",
+      frente: frente,
+      atividade: document.getElementById('m-atividade').value.trim(),
+      responsavel: document.getElementById('m-resp').value.trim(),
+      status: document.getElementById('m-status').value
+  });
+
+    saveTasks(tasks);
+    render();
+
+    mForm.reset();
+    modal.classList.remove("open");
+  });
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  (function init() {
+    if (!loadTasks()) saveTasks(parseDOM());
+    render();
+  })();
+</script>
+
+</body>
+</html>
