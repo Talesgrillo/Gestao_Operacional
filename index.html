@@ -766,16 +766,76 @@
   };
   const STORE_KEY = 'gestao_backlog_v1';
 
-  // ── STORAGE ───────────────────────────────────────────────────────────────
+  // ── STORAGE (Google Sheets via Apps Script) ─────────────────────────────────
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
+  // COLE AQUI a URL do seu Apps Script (Implantar → App da Web).
+  // Enquanto estiver vazia, o app funciona só em memória (não persiste).
+  const API_URL = 'https://script.google.com/macros/s/AKfycby-1UySTUBylPrXt8CyYdmjhqeD4wA8WFqZAuMAFUPBE8qpFIJNQqzZDrYICbl-cXzeiw/exec';
+
+  // memoryTasks é a fonte da verdade usada por toda a UI (síncrona, igual antes).
+  // Toda alteração some/fica salva na planilha em segundo plano (assíncrono).
+  let memoryTasks = null;
+  let syncFailed = false;
+
   function loadTasks() {
-    try { const d = localStorage.getItem(STORE_KEY); return d ? JSON.parse(d) : null; }
-    catch { return null; }
+    return memoryTasks;
   }
 
   function saveTasks(tasks) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(tasks)); } catch {}
+    memoryTasks = tasks;
+    syncToSheet(tasks);
+  }
+
+  async function syncToSheet(tasks) {
+    if (!API_URL) return;
+    try {
+      // mode:'no-cors' evita o bloqueio de CORS do navegador. Não conseguimos
+      // ler a resposta, mas o envio chega e é processado do lado do Apps Script.
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(tasks)
+      });
+      if (syncFailed) { syncFailed = false; hideSyncWarning(); }
+    } catch (err) {
+      console.error('Falha ao salvar na planilha, tarefa ficou só nesta sessão:', err);
+      syncFailed = true;
+      showSyncWarning();
+    }
+  }
+
+  // Leitura via JSONP: usa uma tag <script>, que não é bloqueada por CORS
+  // (diferente do fetch(), que é bloqueado pelo navegador pra ler a
+  // resposta de outro domínio como script.google.com).
+  function fetchFromSheet() {
+    if (!API_URL) return Promise.resolve(null);
+    return new Promise((resolve, reject) => {
+      const cbName = '__sheetCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+      const script = document.createElement('script');
+      const timer = setTimeout(() => { cleanup(); reject(new Error('Tempo esgotado ao carregar da planilha')); }, 12000);
+      function cleanup() { clearTimeout(timer); delete window[cbName]; script.remove(); }
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      script.onerror = () => { cleanup(); reject(new Error('Falha ao carregar script da planilha')); };
+      script.src = API_URL + (API_URL.includes('?') ? '&' : '?') + 'callback=' + cbName;
+      document.head.appendChild(script);
+    });
+  }
+
+  function showSyncWarning() {
+    let el = document.getElementById('sync-warning');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'sync-warning';
+      el.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#B91C1C;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);';
+      el.textContent = 'Não foi possível salvar na planilha agora — suas alterações estão só nesta sessão.';
+      document.body.appendChild(el);
+    }
+  }
+  function hideSyncWarning() {
+    const el = document.getElementById('sync-warning');
+    if (el) el.remove();
   }
 
   // ── DOM PARSE (first run only) ─────────────────────────────────────────────
@@ -956,8 +1016,15 @@
   });
 
   // ── INIT ──────────────────────────────────────────────────────────────────
-  (function init() {
-    if (!loadTasks()) saveTasks(parseDOM());
+  (async function init() {
+    try {
+      const remote = await fetchFromSheet();
+      memoryTasks = (remote && remote.length) ? remote : parseDOM();
+    } catch (err) {
+      console.error('Falha ao carregar da planilha, usando dados iniciais da página:', err);
+      memoryTasks = parseDOM();
+      showSyncWarning();
+    }
     render();
   })();
 </script>
